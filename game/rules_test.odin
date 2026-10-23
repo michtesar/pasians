@@ -17,7 +17,7 @@ pile_of :: proc(cards: ..Card) -> (p: Pile) {
   return
 }
 
-empty_game :: proc(draw_count := 1) -> (g: Klondike) {
+empty_game :: proc(draw_count := 1) -> (g: Game) {
   g.draw_count = draw_count
   return
 }
@@ -40,7 +40,7 @@ splitmix_matches_reference :: proc(t: ^testing.T) {
 
 @(test)
 deal_lays_out_klondike :: proc(t: ^testing.T) {
-  g := deal(42)
+  g := deal_klondike(42)
   seen: [Suit][14]bool
   for col in 0 ..< 7 {
     p := g.tableau[col]
@@ -64,13 +64,13 @@ deal_lays_out_klondike :: proc(t: ^testing.T) {
 
 @(test)
 deal_is_stable_per_seed :: proc(t: ^testing.T) {
-  a, b, c := deal(7), deal(7), deal(8)
+  a, b, c := deal_klondike(7), deal_klondike(7), deal_klondike(8)
   testing.expect(t, a == b, "same seed must give the same deal")
   testing.expect(t, a != c, "different seeds should give different deals")
 
   // Pinned so a change to the shuffle or the Rng can't silently change
   // every daily deal. Update only on purpose.
-  g := deal(1)
+  g := deal_klondike(1)
   tops: [7]Card
   for col in 0 ..< 7 {
     tops[col], _ = pile_top(g.tableau[col])
@@ -195,7 +195,7 @@ draw_three_shows_third_card :: proc(t: ^testing.T) {
 
 @(test)
 recycle_keeps_stock_order :: proc(t: ^testing.T) {
-  g := deal(3)
+  g := deal_klondike(3)
   first, second: [24]Card
   for i in 0 ..< 24 {
     draw(&g)
@@ -249,7 +249,7 @@ won_when_all_foundations_full :: proc(t: ^testing.T) {
 
 @(test)
 snapshot_is_a_copy :: proc(t: ^testing.T) {
-  g := deal(5)
+  g := deal_klondike(5)
   saved := g
   draw(&g)
   testing.expect(t, saved != g)

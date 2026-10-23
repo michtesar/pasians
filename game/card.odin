@@ -17,6 +17,8 @@ Card :: struct {
 }
 
 ACE :: 1
+JACK :: 11
+QUEEN :: 12
 KING :: 13
 
 is_red :: proc(c: Card) -> bool {
