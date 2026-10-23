@@ -18,6 +18,8 @@ USAGE :: `usage: pasians [options]
   --keys KEYS                type KEYS at start (testing)
   --shot PATH                save a PNG after --frames frames and quit (testing)
   --frames N                 frames before --shot (default 30)
+  --click X,Y                click at X,Y after --keys; repeatable (testing)
+  --autoplay                 play the solver's moves to a win (testing)
   --win                      start with a won game (testing the animation)
   --install-hook             reload colours instantly on Omarchy theme switches`
 
@@ -71,6 +73,36 @@ load_font :: proc() -> rl.Font {
   return rl.GetFontDefault()
 }
 
+// U+E900 in Omarchy's icon font (default/fonts/omarchy/README.md).
+OMARCHY_LOGO :: cstring("\uE900")
+
+// Omarchy's icon font for the card backs: wherever fontconfig has it, the
+// path omarchy-settings installs it to, or the source tree.
+load_logo :: proc() -> (rl.Font, bool) {
+  candidates := make([dynamic]string, context.temp_allocator)
+  state, out, _, err := os.process_exec({command = {"fc-match", "-f", "%{file}", "omarchy"}}, context.temp_allocator)
+  if err == nil && state.exit_code == 0 && strings.contains(string(out), "omarchy") {
+    append(&candidates, string(out))
+  }
+  append(&candidates, "/usr/share/fonts/omarchy/omarchy.ttf")
+  if root := os.get_env("OMARCHY_PATH", context.temp_allocator); root != "" {
+    append(&candidates, strings.concatenate({root, "/default/fonts/omarchy/omarchy.ttf"}, context.temp_allocator))
+  }
+  codepoint := rune(0xE900)
+  for path in candidates {
+    if !os.exists(path) {
+      continue
+    }
+    font := rl.LoadFontEx(strings.clone_to_cstring(path, context.temp_allocator), FONT_SIZE, &codepoint, 1)
+    if font.texture.id != 0 && font.glyphCount > 0 && font.glyphs[0].value == codepoint {
+      rl.GenTextureMipmaps(&font.texture)
+      rl.SetTextureFilter(font.texture, .TRILINEAR)
+      return font, true
+    }
+  }
+  return {}, false
+}
+
 reload_theme :: proc() {
   app.theme = load_theme()
   app.theme_stamp = theme_stamp()
@@ -120,6 +152,32 @@ feed_keys :: proc(keys: string) {
   }
 }
 
+// Test hook: plays the solver's moves through the same pick-up-and-drop
+// path a player uses, so a win exercises the whole frontend.
+play_to_win :: proc() {
+  path := make([dynamic]game.Move)
+  defer delete(path)
+  if game.solve(app.g, 2_000_000, nil, &path) != .Solved {
+    fmt.eprintln("pasians: autoplay found no win for this deal")
+    return
+  }
+  for m in path {
+    if m.from.kind == .Stock {
+      app.cursor = game.STOCK
+      space()
+    } else {
+      app.cursor, app.depth = m.from, m.count
+      space()
+      app.cursor = m.to
+      space()
+    }
+    handle_char('F')
+  }
+  if !app.won {
+    fmt.eprintln("pasians: autoplay replayed the solution without winning")
+  }
+}
+
 fail_usage :: proc() {
   fmt.eprintln(USAGE)
   os.exit(2)
@@ -136,6 +194,8 @@ main :: proc() {
   shot := ""
   frames := 30
   win := false
+  autoplay := false
+  clicks := make([dynamic]rl.Vector2)
 
   args := os.args[1:]
   for i := 0; i < len(args); i += 1 {
@@ -159,6 +219,16 @@ main :: proc() {
       shot = value(args, &i)
     case "--frames":
       frames = strconv.parse_int(value(args, &i)) or_else 30
+    case "--click":
+      xs, _, ys := strings.partition(value(args, &i), ",")
+      x, xok := strconv.parse_f32(xs)
+      y, yok := strconv.parse_f32(ys)
+      if !xok || !yok {
+        fail_usage()
+      }
+      append(&clicks, rl.Vector2{x, y})
+    case "--autoplay":
+      autoplay = true
     case "--win":
       win = true
     case "--install-hook":
@@ -181,6 +251,7 @@ main :: proc() {
   rl.SetTargetFPS(60)
 
   app.font = load_font()
+  app.logo, app.has_logo = load_logo()
   app.save = load_save()
   reload_theme()
 
@@ -216,6 +287,12 @@ main :: proc() {
     after_change()
   }
   feed_keys(keys)
+  for pos in clicks {
+    click(pos)
+  }
+  if autoplay {
+    play_to_win()
+  }
 
   frame := 0
   for !rl.WindowShouldClose() && !app.quit {

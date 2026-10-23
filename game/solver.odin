@@ -144,8 +144,9 @@ Frame :: struct {
 
 // Depth-first search over legal_moves, with safe cards sent up after every
 // move. Visits at most `budget` new positions. On success `first` is the
-// opening move of the solution, which is what the hint shows.
-solve :: proc(start: Game, budget: int, first: ^Move = nil) -> Solve_Result {
+// opening move of the solution, which is what the hint shows, and `path`
+// gets every move; replaying it needs auto_play after each one.
+solve :: proc(start: Game, budget: int, first: ^Move = nil, path: ^[dynamic]Move = nil) -> Solve_Result {
   if g := start; is_won(&g) {
     return .Solved
   }
@@ -176,6 +177,12 @@ solve :: proc(start: Game, budget: int, first: ^Move = nil) -> Solve_Result {
     if is_won(&child) {
       if first != nil {
         first^ = stack[0].moves.moves[stack[0].next - 1]
+      }
+      if path != nil {
+        clear(path)
+        for f in stack {
+          append(path, f.moves.moves[f.next - 1])
+        }
       }
       return .Solved
     }

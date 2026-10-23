@@ -66,6 +66,8 @@ App :: struct {
   theme_check:  f64,
   wallpaper:    rl.Texture2D,
   has_wallpaper: bool,
+  logo:         rl.Font,
+  has_logo:     bool,
   save:         Save,
   font:         rl.Font,
   bounce:       Bounce,
@@ -690,9 +692,12 @@ hit_test :: proc(pos: rl.Vector2) -> (ref: game.Pile_Ref, depth: int, ok: bool) 
 }
 
 handle_mouse :: proc() {
-  if !rl.IsMouseButtonPressed(.LEFT) {
-    return
+  if rl.IsMouseButtonPressed(.LEFT) {
+    click(rl.GetMousePosition())
   }
+}
+
+click :: proc(pos: rl.Vector2) {
   if bouncing() {
     stop_bounce()
     return
@@ -701,7 +706,7 @@ handle_mouse :: proc() {
     app.overlay = .None
     return
   }
-  ref, depth, ok := hit_test(rl.GetMousePosition())
+  ref, depth, ok := hit_test(pos)
   if !ok {
     app.held = nil
     return

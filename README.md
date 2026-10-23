@@ -52,9 +52,10 @@ The mouse works too: click to pick up and put down, double-click to send a card 
 - Theme colours come from `omarchy-theme-color --all`, so pasians resolves the same palette as every other themed app. Outside Omarchy it reads `colors.toml` directly, and without either it falls back to Tokyo Night.
   - Card faces are the theme's `foreground` and their ink is its `background`, so light themes get dark cards.
   - Red suits must reach WCAG 3:1 against the card face. Otherwise pasians tries `bright_red`, then darkens the red until it passes.
+  - Card backs carry the Omarchy logo (`U+E900` from Omarchy's icon font) in the theme's accent. The font is found through fontconfig, `/usr/share/fonts/omarchy/` or `$OMARCHY_PATH`; without it the backs fall back to a diamond pattern.
 - The theme-set hook sends `SIGUSR1` and the colours reload at once. Without the hook, a once-a-second check of `colors.toml` and the wallpaper catches the change.
 - The Linux build uses Odin's bundled raylib, which talks to X11, so it runs under XWayland. Omarchy sets `force_zero_scaling`, so the window renders at native resolution, and the layout scales with the window size.
 
 ## Testing flags
 
-`--deal N`, `--mode`, `--daily`, `--keys KEYS` (typed at start; `:cmd\n` works), `--shot PATH --frames N` (save a PNG and quit) and `--win` (start on the victory animation).
+`--deal N`, `--mode`, `--daily`, `--keys KEYS` (typed at start; `:cmd\n` works), `--click X,Y` (repeatable), `--autoplay` (replays the solver's win through the same pick-up-and-drop path a player uses), `--shot PATH --frames N` (save a PNG and quit) and `--win` (start on the victory animation).

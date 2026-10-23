@@ -224,7 +224,14 @@ draw_card :: proc(l: Layout, c: game.Card, r: rl.Rectangle) {
     rounded(r, t.back)
     inner := inflate(r, -r.width * 0.08)
     rounded(inner, mix(t.back, t.back_mark, 0.35))
-    // A lattice of small diamonds, kept inside the inner panel.
+    if app.has_logo {
+      // The Omarchy mark from Omarchy's own icon font, in the theme's colours.
+      size := inner.width * 0.72
+      m := rl.MeasureTextEx(app.logo, OMARCHY_LOGO, size, 0)
+      rl.DrawTextEx(app.logo, OMARCHY_LOGO, {inner.x + (inner.width - m.x) / 2, inner.y + (inner.height - m.y) / 2}, size, 0, mix(t.back, t.face, 0.45))
+      return
+    }
+    // Outside Omarchy: a lattice of small diamonds, kept inside the inner panel.
     step := inner.width / 5
     for row := 0; f32(row) * step < inner.height - step * 0.5; row += 1 {
       for col in 0 ..< 5 {
