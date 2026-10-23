@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Pasians
+GenericName=Solitaire
+Comment=Keyboard-first Klondike and FreeCell
+Exec=pasians
+Icon=pasians
+Terminal=false
+Categories=Game;CardGame;
+Keywords=solitaire;klondike;freecell;cards;

@@ -1,0 +1,5 @@
+post_install() {
+  echo 'On Omarchy, run `pasians --install-hook` once for instant theme changes,'
+  echo 'and copy /usr/share/pasians/hypr.lua to ~/.config/hypr/pasians.lua'
+  echo 'with require("hypr.pasians") in hyprland.lua for the floating window.'
+}

@@ -1,0 +1,3 @@
+# Installed by `pasians --install-hook`: Omarchy runs this after a theme
+# switch, and pasians reloads its colours on SIGUSR1.
+pkill -USR1 -x pasians || true
